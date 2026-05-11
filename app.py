@@ -137,10 +137,45 @@ if len(st.session_state.invoice_items) > 0:
 
     st.markdown("### Added Services")
 
+    # Display Table
     st.dataframe(
         df,
         use_container_width=True
     )
+
+    # -----------------------------------
+    # REMOVE SERVICE
+    # -----------------------------------
+
+    st.markdown("### Remove Service")
+
+    remove_options = [
+        f"{idx + 1}. {item['Description']}"
+        for idx, item in enumerate(
+            st.session_state.invoice_items
+        )
+    ]
+
+    selected_item = st.selectbox(
+        "Select Service to Remove",
+        remove_options
+    )
+
+    if st.button("Remove Selected Service"):
+
+        selected_index = remove_options.index(
+            selected_item
+        )
+
+        st.session_state.invoice_items.pop(
+            selected_index
+        )
+
+        st.success(
+            "Service Removed Successfully"
+        )
+
+        st.rerun()
 
     # -----------------------------------
     # CALCULATIONS
@@ -202,6 +237,7 @@ if len(st.session_state.invoice_items) > 0:
         heading.alignment = 1
 
         title = doc.add_paragraph()
+
         title.add_run(
             "INVOICE / BILL"
         ).bold = True
@@ -252,6 +288,7 @@ if len(st.session_state.invoice_items) > 0:
         )
 
         if client_gst.strip() != "":
+
             doc.add_paragraph(
                 f"Client GST Number: {client_gst}"
             )
@@ -363,6 +400,7 @@ if len(st.session_state.invoice_items) > 0:
         )
 
 else:
+
     st.info(
         "Add services to generate invoice."
     )
