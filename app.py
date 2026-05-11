@@ -1,138 +1,359 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 from docx import Document
-from docx.shared import Inches
 import io
-import os
 
-st.set_page_config(page_title="Focus Marketing Billing Software", layout="wide")
+# -----------------------------------
+# PAGE CONFIG
+# -----------------------------------
+
+st.set_page_config(
+    page_title="Focus Marketing Billing Software",
+    layout="wide"
+)
 
 st.title("Focus Marketing Solutions - Billing Software")
 
 st.markdown("---")
 
-# Invoice Details
+# -----------------------------------
+# SESSION STATE
+# -----------------------------------
+
+if "invoice_items" not in st.session_state:
+    st.session_state.invoice_items = []
+
+# -----------------------------------
+# COMPANY GST PLACEHOLDER
+# -----------------------------------
+
+company_gst_number = "GSTIN: ____________________"
+
+# -----------------------------------
+# INVOICE DETAILS
+# -----------------------------------
+
 col1, col2 = st.columns(2)
 
 with col1:
-    invoice_number = st.text_input("Invoice Number", value=f"INV-{datetime.now().strftime('%Y%m%d%H%M')}")
+
+    invoice_number = st.text_input(
+        "Invoice Number",
+        value=f"INV-{datetime.now().strftime('%Y%m%d%H%M')}"
+    )
+
     client_name = st.text_input("Client Name")
+
     company_name = st.text_input("Company Name")
+
     client_address = st.text_area("Client Address")
 
+    client_gst = st.text_input(
+        "Client GST Number (Optional)"
+    )
+
 with col2:
+
     invoice_date = st.date_input("Invoice Date")
-    payment_mode = st.selectbox("Payment Mode", ["Cash", "UPI", "Bank Transfer", "Card"])
-    gst_percentage = st.number_input("GST %", min_value=0.0, value=18.0)
+
+    payment_mode = st.selectbox(
+        "Payment Mode",
+        ["Cash", "UPI", "Bank Transfer", "Card"]
+    )
+
+    gst_percentage = st.number_input(
+        "GST %",
+        min_value=0.0,
+        value=18.0
+    )
+
     remarks = st.text_area("Remarks")
+
+# -----------------------------------
+# SERVICES SECTION
+# -----------------------------------
 
 st.markdown("## Services")
 
-if "items" not in st.session_state:
-    st.session_state.items = []
+with st.form("service_form"):
 
-with st.form("add_item_form"):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        description = st.text_input("Service Description")
+        description = st.text_input(
+            "Service Description"
+        )
 
     with col2:
-        quantity = st.number_input("Quantity", min_value=1, value=1)
+        quantity = st.number_input(
+            "Quantity",
+            min_value=1,
+            value=1
+        )
 
     with col3:
-        rate = st.number_input("Rate", min_value=0.0, value=0.0)
+        rate = st.number_input(
+            "Rate",
+            min_value=0.0,
+            value=0.0
+        )
 
-    add_item = st.form_submit_button("Add Service")
+    add_service = st.form_submit_button(
+        "Add Service"
+    )
 
-    if add_item:
-        amount = quantity * rate
-        st.session_state.items.append({
-            "Description": description,
-            "Quantity": quantity,
-            "Rate": rate,
-            "Amount": amount
-        })
+    if add_service:
 
-if st.session_state.items:
-    df = pd.DataFrame(st.session_state.items)
-    st.dataframe(df, use_container_width=True)
+        if description.strip() == "":
+            st.warning(
+                "Please enter service description"
+            )
+
+        else:
+
+            amount = quantity * rate
+
+            st.session_state.invoice_items.append({
+                "Description": description,
+                "Quantity": quantity,
+                "Rate": rate,
+                "Amount": amount
+            })
+
+            st.success(
+                "Service Added Successfully"
+            )
+
+# -----------------------------------
+# DISPLAY SERVICES
+# -----------------------------------
+
+if len(st.session_state.invoice_items) > 0:
+
+    df = pd.DataFrame(
+        st.session_state.invoice_items
+    )
+
+    st.markdown("### Added Services")
+
+    st.dataframe(
+        df,
+        use_container_width=True
+    )
+
+    # -----------------------------------
+    # CALCULATIONS
+    # -----------------------------------
 
     subtotal = df["Amount"].sum()
-    gst_amount = subtotal * (gst_percentage / 100)
+
+    gst_amount = subtotal * (
+        gst_percentage / 100
+    )
+
     total_amount = subtotal + gst_amount
 
+    # -----------------------------------
+    # SUMMARY
+    # -----------------------------------
+
     st.markdown("---")
+
     st.subheader("Invoice Summary")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Subtotal", f"₹ {subtotal:,.2f}")
+        st.metric(
+            "Subtotal",
+            f"₹ {subtotal:,.2f}"
+        )
 
     with col2:
-        st.metric("GST", f"₹ {gst_amount:,.2f}")
+        st.metric(
+            "GST",
+            f"₹ {gst_amount:,.2f}"
+        )
 
     with col3:
-        st.metric("Total Amount", f"₹ {total_amount:,.2f}")
+        st.metric(
+            "Total Amount",
+            f"₹ {total_amount:,.2f}"
+        )
+
+    # -----------------------------------
+    # GENERATE DOCX
+    # -----------------------------------
 
     if st.button("Generate Invoice DOCX"):
 
         doc = Document()
 
-        # Title
-        heading = doc.add_heading("FOCUS MARKETING SOLUTIONS", level=1)
+        # -----------------------------------
+        # HEADER
+        # -----------------------------------
+
+        heading = doc.add_heading(
+            "FOCUS MARKETING SOLUTIONS",
+            level=1
+        )
+
         heading.alignment = 1
 
-        p = doc.add_paragraph()
-        p.add_run("INVOICE / BILL").bold = True
+        title = doc.add_paragraph()
+        title.add_run(
+            "INVOICE / BILL"
+        ).bold = True
 
-        # Invoice Info
-        doc.add_paragraph(f"Invoice Number: {invoice_number}")
-        doc.add_paragraph(f"Invoice Date: {invoice_date}")
+        # -----------------------------------
+        # COMPANY DETAILS
+        # -----------------------------------
 
-        # Client Info
-        doc.add_heading("Client Details", level=2)
-        doc.add_paragraph(f"Client Name: {client_name}")
-        doc.add_paragraph(f"Company Name: {company_name}")
-        doc.add_paragraph(f"Address: {client_address}")
+        doc.add_paragraph(
+            "Focus Marketing Solutions"
+        )
 
-        # Services Table
-        doc.add_heading("Services", level=2)
+        doc.add_paragraph(
+            company_gst_number
+        )
 
-        table = doc.add_table(rows=1, cols=5)
+        # -----------------------------------
+        # INVOICE DETAILS
+        # -----------------------------------
+
+        doc.add_paragraph(
+            f"Invoice Number: {invoice_number}"
+        )
+
+        doc.add_paragraph(
+            f"Invoice Date: {invoice_date}"
+        )
+
+        # -----------------------------------
+        # CLIENT DETAILS
+        # -----------------------------------
+
+        doc.add_heading(
+            "Client Details",
+            level=2
+        )
+
+        doc.add_paragraph(
+            f"Client Name: {client_name}"
+        )
+
+        doc.add_paragraph(
+            f"Company Name: {company_name}"
+        )
+
+        doc.add_paragraph(
+            f"Address: {client_address}"
+        )
+
+        if client_gst.strip() != "":
+            doc.add_paragraph(
+                f"Client GST Number: {client_gst}"
+            )
+
+        # -----------------------------------
+        # SERVICES TABLE
+        # -----------------------------------
+
+        doc.add_heading(
+            "Services",
+            level=2
+        )
+
+        table = doc.add_table(
+            rows=1,
+            cols=5
+        )
+
         table.style = "Table Grid"
 
         hdr_cells = table.rows[0].cells
+
         hdr_cells[0].text = "Sl No"
         hdr_cells[1].text = "Description"
         hdr_cells[2].text = "Quantity"
         hdr_cells[3].text = "Rate"
         hdr_cells[4].text = "Amount"
 
-        for idx, item in enumerate(st.session_state.items, start=1):
+        for idx, item in enumerate(
+            st.session_state.invoice_items,
+            start=1
+        ):
+
             row_cells = table.add_row().cells
+
             row_cells[0].text = str(idx)
+
             row_cells[1].text = item["Description"]
+
             row_cells[2].text = str(item["Quantity"])
-            row_cells[3].text = f"₹ {item['Rate']:,.2f}"
-            row_cells[4].text = f"₹ {item['Amount']:,.2f}"
+
+            row_cells[3].text = (
+                f"₹ {item['Rate']:,.2f}"
+            )
+
+            row_cells[4].text = (
+                f"₹ {item['Amount']:,.2f}"
+            )
+
+        # -----------------------------------
+        # TOTALS
+        # -----------------------------------
 
         doc.add_paragraph("")
-        doc.add_paragraph(f"Subtotal: ₹ {subtotal:,.2f}")
-        doc.add_paragraph(f"GST ({gst_percentage}%): ₹ {gst_amount:,.2f}")
-        doc.add_paragraph(f"Total Amount: ₹ {total_amount:,.2f}")
 
-        doc.add_paragraph(f"Payment Mode: {payment_mode}")
-        doc.add_paragraph(f"Remarks: {remarks}")
+        doc.add_paragraph(
+            f"Subtotal: ₹ {subtotal:,.2f}"
+        )
 
-        doc.add_paragraph("\nAuthorized Signature")
+        doc.add_paragraph(
+            f"GST ({gst_percentage}%): ₹ {gst_amount:,.2f}"
+        )
+
+        doc.add_paragraph(
+            f"Total Amount: ₹ {total_amount:,.2f}"
+        )
+
+        # -----------------------------------
+        # PAYMENT DETAILS
+        # -----------------------------------
+
+        doc.add_paragraph(
+            f"Payment Mode: {payment_mode}"
+        )
+
+        doc.add_paragraph(
+            f"Remarks: {remarks}"
+        )
+
+        # -----------------------------------
+        # SIGNATURE
+        # -----------------------------------
+
+        doc.add_paragraph("\n")
+
+        doc.add_paragraph(
+            "Authorized Signature"
+        )
+
+        # -----------------------------------
+        # SAVE DOCX
+        # -----------------------------------
 
         buffer = io.BytesIO()
+
         doc.save(buffer)
+
         buffer.seek(0)
+
+        st.success(
+            "Invoice Generated Successfully"
+        )
 
         st.download_button(
             label="Download Invoice DOCX",
@@ -142,4 +363,6 @@ if st.session_state.items:
         )
 
 else:
-    st.info("Add services to generate invoice.")
+    st.info(
+        "Add services to generate invoice."
+    )
