@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Focus Marketing Solutions - Billing Software")
+st.title("Focus Marketing Consultant - Billing Software")
 
 st.markdown("---")
 
@@ -230,7 +230,7 @@ if len(st.session_state.invoice_items) > 0:
         # -----------------------------------
 
         heading = doc.add_heading(
-            "FOCUS MARKETING SOLUTIONS",
+            "FOCUS MARKETING CONSULTANT",
             level=1
         )
 
@@ -247,7 +247,7 @@ if len(st.session_state.invoice_items) > 0:
         # -----------------------------------
 
         doc.add_paragraph(
-            "Focus Marketing Solutions"
+            "Focus Marketing Consultant"
         )
 
         doc.add_paragraph(
