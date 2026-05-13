@@ -28,7 +28,7 @@ if "invoice_items" not in st.session_state:
 # COMPANY GST PLACEHOLDER
 # -----------------------------------
 
-company_gst_number = "GSTIN: ____________________"
+company_gst_number = "GSTIN: 29AHHPP6093J1ZN"
 
 # -----------------------------------
 # INVOICE DETAILS
