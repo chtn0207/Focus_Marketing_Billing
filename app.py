@@ -123,6 +123,14 @@ if menu == "Create Document":
             "Client GST Number"
         )
 
+        # -----------------------------------
+        # MEME NUMBER FIELD
+        # -----------------------------------
+
+        meme_number = st.text_input(
+            "MEME Number"
+        )
+
         gst_percentage = st.number_input(
             "GST %",
             min_value=0.0,
@@ -181,7 +189,9 @@ if menu == "Create Document":
 
             st.dataframe(df)
 
-            # REMOVE OPTION
+            # -----------------------------------
+            # REMOVE SERVICE
+            # -----------------------------------
 
             remove_options = [
                 f"{idx + 1}. {item['Description']}"
@@ -207,6 +217,10 @@ if menu == "Create Document":
 
                 st.rerun()
 
+            # -----------------------------------
+            # CALCULATIONS
+            # -----------------------------------
+
             subtotal = df["Amount"].sum()
 
             gst_amount = subtotal * (
@@ -220,13 +234,17 @@ if menu == "Create Document":
                 f"₹ {total_amount:,.2f}"
             )
 
-            # GENERATE DOC
+            # -----------------------------------
+            # GENERATE DOCX
+            # -----------------------------------
 
             if st.button("Generate Invoice DOCX"):
 
                 doc = Document()
 
-                # HEADER TABLE
+                # -----------------------------------
+                # HEADER
+                # -----------------------------------
 
                 table = doc.add_table(
                     rows=1,
@@ -244,6 +262,10 @@ if menu == "Create Document":
                     f"Date: {invoice_date}"
                 )
 
+                # -----------------------------------
+                # TITLE
+                # -----------------------------------
+
                 doc.add_heading(
                     "INVOICE",
                     level=1
@@ -256,6 +278,10 @@ if menu == "Create Document":
                 doc.add_paragraph(
                     "GSTIN: __________________"
                 )
+
+                # -----------------------------------
+                # CLIENT DETAILS
+                # -----------------------------------
 
                 doc.add_heading(
                     "Client Details",
@@ -278,7 +304,17 @@ if menu == "Create Document":
                     f"Client GST: {client_gst}"
                 )
 
+                # -----------------------------------
+                # MEME NUMBER
+                # -----------------------------------
+
+                doc.add_paragraph(
+                    f"MEME Number: {meme_number}"
+                )
+
+                # -----------------------------------
                 # SERVICES TABLE
+                # -----------------------------------
 
                 service_table = doc.add_table(
                     rows=1,
@@ -308,6 +344,10 @@ if menu == "Create Document":
                     row[3].text = str(item["Rate"])
                     row[4].text = str(item["Amount"])
 
+                # -----------------------------------
+                # TOTALS
+                # -----------------------------------
+
                 doc.add_paragraph(
                     f"Subtotal: ₹ {subtotal:,.2f}"
                 )
@@ -320,11 +360,16 @@ if menu == "Create Document":
                     f"Total Amount: ₹ {total_amount:,.2f}"
                 )
 
+                # -----------------------------------
+                # PAYMENT DETAILS
+                # -----------------------------------
+
                 doc.add_paragraph(
                     f"Payment Mode: {payment_mode}"
                 )
 
                 if transaction_id != "":
+
                     doc.add_paragraph(
                         f"Transaction ID: {transaction_id}"
                     )
@@ -333,11 +378,17 @@ if menu == "Create Document":
                     f"Remarks: {remarks}"
                 )
 
+                # -----------------------------------
+                # SIGNATURE
+                # -----------------------------------
+
                 doc.add_paragraph(
                     "\nAuthorized Signature"
                 )
 
-                # SAVE TO DB
+                # -----------------------------------
+                # SAVE TO DATABASE
+                # -----------------------------------
 
                 save_bill(
                     document_number,
@@ -352,7 +403,9 @@ if menu == "Create Document":
                     )
                 )
 
-                # DOWNLOAD
+                # -----------------------------------
+                # DOWNLOAD DOCX
+                # -----------------------------------
 
                 buffer = io.BytesIO()
 
@@ -448,6 +501,7 @@ if menu == "Create Document":
             )
 
             if transaction_id != "":
+
                 doc.add_paragraph(
                     f"Transaction ID: {transaction_id}"
                 )
