@@ -276,7 +276,7 @@ if menu == "Create Document":
                 )
 
                 doc.add_paragraph(
-                    "GSTIN: __________________"
+                    "GSTIN: 29AHHPP6093J1ZN"
                 )
 
                 # -----------------------------------
